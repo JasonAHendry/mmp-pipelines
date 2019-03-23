@@ -1,0 +1,10 @@
+name: mmp
+channels:
+  - bioconda
+dependencies:
+  - python=3.5
+  - porechop
+  - minimap2
+  - samtools
+  - bedtools
+
