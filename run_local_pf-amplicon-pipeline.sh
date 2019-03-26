@@ -56,7 +56,7 @@ echo "Initializing"
 echo "--------------------------------------------------------------------------------"
 
 # Assign Reference Genomes
-pf_ref_path="data/resources/plasmodb/PlasmoDB-41_Pfalciparum3D7_Genome.fasta"
+pf_ref_path="data/resources/plasmodb/39/PlasmoDB-39_Pfalciparum3D7_Genome.fasta"
 pf_ref_file=${pf_ref_path##*/}
 hs_ref_path="data/resources/1000g/GRCh38_full_analysis_set_plus_decoy_hla.fa"
 hs_ref_file=${hs_ref_path##*/}
@@ -81,7 +81,7 @@ echo "--------------------------------------------------------------------------
 echo "Input:" $input_path
 echo "Output:" $results_dir
 echo "Running..."
-#porechop -i $input_path -b $results_dir
+porechop -i $input_path -b $results_dir
 echo "Done."
 
 # Sample Summary
@@ -97,16 +97,18 @@ do
 	i=$((i+1))
 done
 
-# By-Sample Analysis
+# By Barcode Analysis
 echo ""
-echo "Beginning By-Sample Analysis"
+echo "Beginning By Barcode Analysis"
 echo "--------------------------------------------------------------------------------"
+
 i=1
 for current_sample in $all_samples;
 do
 	current_sample_file=${current_sample##*/}
 	current_sample_id=${current_sample_file%%.*}
-	echo "SAMPLE" $i":" $current_sample_file
+	echo "-------------------------------------------------------------------------------" 
+	echo "BARCODE" $i":" $current_sample_file
 	echo "-------------------------------------------------------------------------------"
 	echo "  Path:" $current_sample
 	echo "  File:" $current_sample_file
@@ -168,10 +170,10 @@ do
 	echo "  Input:" $current_sample
 	echo "  Output:" $pf_mapped_path
 	echo "  Running..."
-	minimap2 -ax map-ont \	
-		$pf_ref_path \
-		$current_sample \
-		> $pf_mapped_path
+	minimap2 -ax map-ont \
+			$pf_ref_path \
+			$current_sample \
+			> $pf_mapped_path
 	echo "  Done."
 
 	# Converting 
@@ -205,7 +207,9 @@ do
 	echo "  Running..."
 	samtools index $pf_sorted_path
 	echo "  Done."
+	((++i))  # increment i
 done
+
 
 echo "================================================================================"
 echo "Finished at: "`date`
