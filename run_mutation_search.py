@@ -15,7 +15,7 @@ import getopt
 import numpy as np
 import pandas as pd
 from collections import Counter
-from lib.mutations import *
+from lib.mutation import *
 
 
 # Parse user inputs
@@ -35,7 +35,7 @@ for opt, value in opts:
             
     elif opt in ("-i", "--ini"):
         gene_ini = value
-        config = ConfigParser.ConfigParser()
+        config = configparser.ConfigParser()
         config.read(gene_ini)
         
         # hold gene location information
@@ -83,7 +83,7 @@ if downsample:
     n_reads = 1000
     
     # You have to downsample from the `.sam` file
-    input_sam = input_bam.replace("bam", "sam")
+    input_sam = input_bam.replace("sorted.bam", "sam")
     dwn_sam = os.path.join(output_path, os.path.basename(input_sam))
     dwn_bam = dwn_sam.replace("sam", "bam")
     dwn_sorted_bam = dwn_bam.replace("bam", "sorted.bam")
@@ -115,8 +115,10 @@ else:
 pileup_path = pileup_bam.replace("sorted.bam", "pileup")
 position = gene_dt["chromosome"] + ":" + str(gene_dt["start"]) + "-" + str(gene_dt["end"])
 
-cmd = "samtools mpileup -f %s -r %s -Q 0 -aa -B %s > %s" % (gene_dt["genome"], position, 
-                                                            pileup_bam, pileup_path)
+cmd = "samtools mpileup -f %s -r %s -Q 0 -aa -B %s > %s" % (gene_dt["genome"], 
+                                                            position, 
+                                                            pileup_bam, 
+                                                            pileup_path)
 print("Generating pileup...")
 print(cmd)
 os.system(cmd)
@@ -214,7 +216,7 @@ for mutation in mutations:
         amino_ref = codon_to_amino(codon_ref, genetic_code)
         amino_frequencies = Counter([codon_to_amino(c, genetic_code) for c in codon_pileup])
         # next line removes indels which have prevented making amino acid calls
-        amino_frequencies = Counter(dict([(k, v) for k, v in amino_frequencies.iteritems() if k != None]))
+        amino_frequencies = Counter(dict([(k, v) for k, v in amino_frequencies.items() if k != None]))
         major_amino, major_amino_count = amino_frequencies.most_common(1)[0]
         ref_amino_count = amino_frequencies[amino_ref]
         total_amino_count = sum(amino_frequencies.values())
@@ -260,3 +262,6 @@ mutation_df = mutation_df[["mutation", "detected",
                            "n_aminos"]]
 mutation_df.to_csv(pileup_path.replace("pileup", ".%s.csv" % gene_dt["name"]), index=False)
       
+print("--------------------------------------------------------------------------------")
+print("Mutation search complete.")
+print("================================================================================")

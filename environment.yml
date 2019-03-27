@@ -2,7 +2,8 @@ name: mmp
 channels:
   - bioconda
 dependencies:
-  - python=3.5
+  - python=3.6
+  - anaconda=5.2.0
   - porechop
   - minimap2
   - samtools=1.9=h8ee4bcc_1
