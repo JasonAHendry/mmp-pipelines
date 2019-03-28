@@ -100,11 +100,18 @@ while True:
                     print("    Name:", barcode)
                     barcode_fastq = os.path.join(trimmed_output_dir, barcode)
                     barcode_sam = os.path.join(target_dir, barcode.replace("fastq", "sam"))
-                    cmd = 	"minimap2 -ax map-ont %s %s >> %s" % (pf_ref_path, 
-                                                                  barcode_fastq,
-                                                                  barcode_sam)
+                    cmd_map = "minimap2 -ax map-ont %s %s" % (pf_ref_path, barcode_fastq)
+                    if os.path.isfile(barcode_sam):
+                        #  if the sam file is already there
+                        #  trim header before appending this one
+                        cmd_output = " | sed '/^@/d' >> %s" % barcode_sam
+                    else:
+                        cmd_output = " >> %s" % barcode_sam
+                    cmd = cmd_map + cmd_output
+                    print("  ", cmd)
                     os.system(cmd)
                     print("    Done.")
+                    print("")
                     print("")
             else:
                 print("No barcodes discoverd.")
@@ -112,10 +119,3 @@ while True:
         print("No new files found, waiting...")
         time.sleep(wait_time)
     
-    
-
-
-
-
-
-
