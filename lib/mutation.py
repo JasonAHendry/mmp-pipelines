@@ -36,7 +36,7 @@ def process_pileup(pileup, ref):
     
     Note, the solution is ugly, but
     re.sub(\+([0-9])[ATCGatcg]+, ... fails when a variant
-    follows directly after an insertion deltion.
+    follows directly after an indel.
     
     params
         pileup: str
