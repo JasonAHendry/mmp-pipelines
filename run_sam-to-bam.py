@@ -1,13 +1,10 @@
-"""
-MMPP: Mobile Malaria Project Pipelines
---------------------
-Convert a set of SAM files
-to sorted, indexed
-BAM files
---------------------
-JHendry, 2019/03/28
-
-"""
+# MMPP: Mobile Malaria Project Pipelines
+# --------------------
+# Convert a set of SAM files
+# to sorted, indexed
+# BAM files
+# --------------------
+# JHendry, 2019/03/28
 
 
 import getopt
@@ -36,7 +33,7 @@ for opt, value in opts:
 sam_files = [f for f in os.listdir(sam_dir) if ".sam" in f]
 n_sam_files = len(sam_files)
 print("Target Directory:", sam_dir)
-print("Discovered %d SAM files.")
+print("Discovered %d SAM files." % n_sam_files)
 print("Converting to BAM, sorting, and indexing...")
 print("================================================================================")
 
