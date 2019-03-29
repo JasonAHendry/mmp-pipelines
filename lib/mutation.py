@@ -7,6 +7,9 @@
 
 import re
 
+complement_map = {"A": "T", "T": "A", 
+                  "G": "C", "C": "G", 
+                  "-": "-", "+": "+" }
 
 genetic_code = { 
         'ATA':'I', 'ATC':'I', 'ATT':'I', 'ATG':'M', 
@@ -70,7 +73,7 @@ def process_pileup(pileup, ref):
             processed_pileup += p
         i += j
     
-    processed_pileup = re.sub("\$|\^\]", "", processed_pileup)
+    processed_pileup = re.sub("\$|\^.", "", processed_pileup)
     processed_pileup = re.sub("\.|,", ref, processed_pileup)
     processed_pileup = processed_pileup.upper()
     

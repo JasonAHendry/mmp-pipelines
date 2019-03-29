@@ -185,9 +185,6 @@ for mutation in mutations:
                 
                 # Reverse complement if necessary
                 if gene_dt["strand"] == 'reverse':
-                    complement_map = {"A": "T", "T": "A", 
-                                      "G": "C", "C": "G", 
-                                      "-": "-", "+": "+" }
                     ref = complement_map[ref]
                     processed_pileup = "".join([complement_map[base] for base in processed_pileup])
                 
