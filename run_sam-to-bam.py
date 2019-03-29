@@ -16,22 +16,24 @@ import time
 
 # Parse user inputs
 try:
-    opts, args = getopt.getopt(sys.argv[1:], ":t:", ["target"])
+    opts, args = getopt.getopt(sys.argv[1:], ":t:", ["target="])
     # -t or --target : directory in which .sam files reside
 except getopt.GetoptError:
     print("Option Error.")
 
 for opt, value in opts:
-    if opt in ("-t", "--target"):
-        sam_dir = value
-    else:
-        print("Parameter %s not recognized." % opt)
-        sys.exit(2)
+	if opt in ("-t", "--target"):
+		sam_dir = value
+	else:
+		print("Parameter %s not recognized." % opt)
+		sys.exit(2)
 
 
 # Run Program
 sam_files = [f for f in os.listdir(sam_dir) if ".sam" in f]
 n_sam_files = len(sam_files)
+print("================================================================================")
+print("Convert a set of SAM files to sorted, indexed, BAM files.")
 print("Target Directory:", sam_dir)
 print("Discovered %d SAM files." % n_sam_files)
 print("Converting to BAM, sorting, and indexing...")
