@@ -20,10 +20,14 @@ from lib.mutation import *
 
 # Parse user inputs
 try:
-    opts, args = getopt.getopt(sys.argv[1:], ":b:i:d:")
+    opts, args = getopt.getopt(sys.argv[1:], ":b:i:d", ["bam=", "ini=", "downsample"])
+	# -b or --bam : .sorted.bam file in which to search for mutations
+	# -i or --ini : .ini file which contains gene name, location, and a listed set of mutations
+	# -d or --downsample : boolean, do you want to downsample reads to accelerate analysis?
 except getopt.GetoptError:
     print("Option Error.")
 
+downsample = False
 for opt, value in opts:
     if opt in ("-b", "--bam"):
         # define input .bam file and ouput directory
@@ -53,7 +57,7 @@ for opt, value in opts:
         
     elif opt in ("-d", "--downsample"):
         # mostly for testing purposes
-        downsample = bool(value)
+        downsample = True
         
     else:
         print("Parameter %s not recognized." % opt)
@@ -75,41 +79,41 @@ print("Output path:", output_path)
 print("Reference genome:", gene_dt["genome"])
 print("")
 print("Downsampling?", downsample)
-
+print("================================================================================")
 
 # Downsample if flagged
 if downsample:
-    print("Downsampling from SAM file...")
-    n_reads = 1000
+	print("Downsampling from SAM file...")
+	n_reads = 1000
     
-    # You have to downsample from the `.sam` file
-    input_sam = input_bam.replace("sorted.bam", "sam")
-    dwn_sam = os.path.join(output_path, os.path.basename(input_sam))
-    dwn_bam = dwn_sam.replace("sam", "bam")
-    dwn_sorted_bam = dwn_bam.replace("bam", "sorted.bam")
+	# You have to downsample from the `.sam` file
+	input_sam = input_bam.replace("sorted.bam", "sam")
+	dwn_sam = os.path.join(output_path, os.path.basename(input_sam))
+	dwn_bam = dwn_sam.replace("sam", "bam")
+	dwn_sorted_bam = dwn_bam.replace("bam", "sorted.bam")
     
     # Downsample by shuffling lines, first extract header
     # Get header
-    os.system("grep '^@' %s > %s" % (input_sam, dwn_sam))
+	os.system("grep '^@' %s > %s" % (input_sam, dwn_sam))
 
     # Downsample
-    os.system("sed '/^@/d' %s > no_header.tmp.bam" % input_sam)
-    os.system("gshuf -n %d no_header.tmp.bam >> %s" % (n_reads, dwn_sam))
-    os.system("rm no_header.tmp.bam")
+	os.system("sed '/^@/d' %s > no_header.tmp.bam" % input_sam)
+	os.system("gshuf -n %d no_header.tmp.bam >> %s" % (n_reads, dwn_sam))
+	os.system("rm no_header.tmp.bam")
     
     # Prepare file for pileup
-    print("Converting to BAM...")
-    os.system("samtools view -S -b %s > %s" % (dwn_sam, dwn_bam))
-    print("Sorting BAM...")
-    os.system("samtools sort %s -o %s" % (dwn_sam, dwn_sorted_bam))
-    print("Indexing BAM...")
-    os.system("samtools index %s" % (dwn_sorted_bam))
-    print("Done.")
+	print("Converting to BAM...")
+	os.system("samtools view -S -b %s > %s" % (dwn_sam, dwn_bam))
+	print("Sorting BAM...")
+	os.system("samtools sort %s -o %s" % (dwn_sam, dwn_sorted_bam))
+	print("Indexing BAM...")
+	os.system("samtools index %s" % (dwn_sorted_bam))
+	print("Done.")
     
-    pileup_bam = dwn_sorted_bam
+	pileup_bam = dwn_sorted_bam
 else:
-    pileup_bam = input_bam
-
+	print("Proceeding with all reads.")
+	pileup_bam = input_bam
       
 # Generate read pileup using samtools
 pileup_path = pileup_bam.replace("sorted.bam", "pileup")

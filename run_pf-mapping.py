@@ -26,7 +26,7 @@ import time
 
 # Parse user inputs
 try:
-    opts, args = getopt.getopt(sys.argv[1:], ":s:t:w:", ["source", "target", "wait"])
+    opts, args = getopt.getopt(sys.argv[1:], ":s:t:w:", ["source=", "target=", "wait="])
     # -s or --source : directory in which MinKNOW deposits .fastq files
     # -t or --target : directory in which to copy .fastq files
     # -w or --wait : if no new files are discovered, how long before next check (in seconds)?
