@@ -33,12 +33,12 @@ genetic_code = {
 
 def process_pileup(pileup, ref):
     """
-    Process a read pileup from 
+    Process a read pileup from
     `samtools mpileup` into
     A,T,C,G,+,-
     
     Note, the solution is ugly, but
-    re.sub(\+([0-9])[ATCGatcg]+, ... fails when a variant
+    re.sub([-+][0-9]+[ATCGatcg]+, ... fails when a variant
     follows directly after an indel.
     
     params
@@ -49,35 +49,22 @@ def process_pileup(pileup, ref):
         ref: str
             String giving the reference base at this position.
     returns
-        processed_pileup:
+        pileup:
             String with length <= pileup. Characters given in
             `samtools mpileup` are converted to the appropriate
             A, T, C, and G values. Insertions are represented
             by a single '+', deletions by a single '-'.
     """
-    
-    n_pileup = len(pileup)
-    processed_pileup = ''
-    i = 0
-    while i < n_pileup:
-        p = pileup[i]
-        if p in ["+", "-"]:
-            size = int(pileup[i + 1])
-            j = size + 2
-            processed_pileup += p
-        elif p == "*":
-            j = 1
-            processed_pileup += "-"
-        else:
-            j = 1
-            processed_pileup += p
-        i += j
-    
-    processed_pileup = re.sub("\$|\^.", "", processed_pileup)
-    processed_pileup = re.sub("\.|,", ref, processed_pileup)
-    processed_pileup = processed_pileup.upper()
-    
-    return processed_pileup
+    # indels are initiated with [+-][0-9]+[ATCGatcg]
+    for indel_size in set(re.findall("\d+", pileup)):
+        indel_size = int(indel_size)
+        pileup = re.sub(r"[+-]%d[ATCGatcg]{%d}" % (indel_size, indel_size), "-", pileup)
+   
+    pileup = re.sub("\*", "-", pileup)  
+    pileup = re.sub("\$|\^.", "", pileup)
+    pileup = re.sub("\.|,", ref, pileup)
+    pileup = pileup.upper()
+    return pileup
 
 
 def codon_to_amino(codon, genetic_code):
