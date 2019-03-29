@@ -33,7 +33,7 @@ for opt, value in opts:
         # define input .bam file and ouput directory
         input_bam = value
         input_path = os.path.dirname(input_bam)
-        output_path = input_path.replace("results", "analysis")
+        output_path = input_path.replace("data", "analysis")
         if not os.path.isdir(output_path):
             os.mkdir(output_path)
             
@@ -83,37 +83,37 @@ print("=========================================================================
 
 # Downsample if flagged
 if downsample:
-	print("Downsampling from SAM file...")
-	n_reads = 1000
-    
-	# You have to downsample from the `.sam` file
-	input_sam = input_bam.replace("sorted.bam", "sam")
-	dwn_sam = os.path.join(output_path, os.path.basename(input_sam))
-	dwn_bam = dwn_sam.replace("sam", "bam")
-	dwn_sorted_bam = dwn_bam.replace("bam", "sorted.bam")
-    
+    print("Downsampling from SAM file...")
+    n_reads = 1000
+
+    # You have to downsample from the `.sam` file
+    input_sam = input_bam.replace("sorted.bam", "sam")
+    dwn_sam = os.path.join(output_path, os.path.basename(input_sam))
+    dwn_bam = dwn_sam.replace("sam", "bam")
+    dwn_sorted_bam = dwn_bam.replace("bam", "sorted.bam")
+
     # Downsample by shuffling lines, first extract header
     # Get header
-	os.system("grep '^@' %s > %s" % (input_sam, dwn_sam))
+    os.system("grep '^@' %s > %s" % (input_sam, dwn_sam))
 
     # Downsample
-	os.system("sed '/^@/d' %s > no_header.tmp.bam" % input_sam)
-	os.system("gshuf -n %d no_header.tmp.bam >> %s" % (n_reads, dwn_sam))
-	os.system("rm no_header.tmp.bam")
-    
+    os.system("sed '/^@/d' %s > no_header.tmp.bam" % input_sam)
+    os.system("gshuf -n %d no_header.tmp.bam >> %s" % (n_reads, dwn_sam))
+    os.system("rm no_header.tmp.bam")
+
     # Prepare file for pileup
-	print("Converting to BAM...")
-	os.system("samtools view -S -b %s > %s" % (dwn_sam, dwn_bam))
-	print("Sorting BAM...")
-	os.system("samtools sort %s -o %s" % (dwn_sam, dwn_sorted_bam))
-	print("Indexing BAM...")
-	os.system("samtools index %s" % (dwn_sorted_bam))
-	print("Done.")
-    
-	pileup_bam = dwn_sorted_bam
+    print("Converting to BAM...")
+    os.system("samtools view -S -b %s > %s" % (dwn_sam, dwn_bam))
+    print("Sorting BAM...")
+    os.system("samtools sort %s -o %s" % (dwn_sam, dwn_sorted_bam))
+    print("Indexing BAM...")
+    os.system("samtools index %s" % (dwn_sorted_bam))
+    print("Done.")
+
+    pileup_bam = dwn_sorted_bam
 else:
-	print("Proceeding with all reads.")
-	pileup_bam = input_bam
+    print("Proceeding with all reads.")
+    pileup_bam = input_bam
       
 # Generate read pileup using samtools
 pileup_path = pileup_bam.replace("sorted.bam", "pileup")
@@ -150,6 +150,8 @@ mutation_dt = {
     "total_count": [],
     "major_amino": [],
     "major_count": [],
+    "ref_major": [],
+    "ref_count": [],
     "mutation_amino": [],
     "mutation_count": [],
     "n_aminos": [],
@@ -215,13 +217,14 @@ for mutation in mutations:
         print("  Majority codon count:", major_codon_count)
         print("  Total codon count:", total_codon_count)
         print("")
-        
+
         # Get frequencies of amino acids
         amino_ref = codon_to_amino(codon_ref, genetic_code)
         amino_frequencies = Counter([codon_to_amino(c, genetic_code) for c in codon_pileup])
         # next line removes indels which have prevented making amino acid calls
         amino_frequencies = Counter(dict([(k, v) for k, v in amino_frequencies.items() if k != None]))
         major_amino, major_amino_count = amino_frequencies.most_common(1)[0]
+        ref_major = amino_ref == major_amino	# is the majority amino acid reference?
         ref_amino_count = amino_frequencies[amino_ref]
         total_amino_count = sum(amino_frequencies.values())
         
@@ -251,20 +254,23 @@ for mutation in mutations:
         mutation_dt["total_count"].append(total_amino_count)
         mutation_dt["major_amino"].append(major_amino)
         mutation_dt["major_count"].append(major_amino_count)
+        mutation_dt["ref_major"].append(ref_major)
+        mutation_dt["ref_count"].append(ref_amino_count)
         mutation_dt["mutation_amino"].append(amino_alt)
         mutation_dt["mutation_count"].append(mutation_count)
         mutation_dt["n_aminos"].append(len(amino_frequencies))
         
         print("====================================================================================================")
         
-        
+# A bit of cleaning, & some derived statistics
 mutation_df = pd.DataFrame(mutation_dt)
 mutation_df = mutation_df[["mutation", "detected", 
                            "total_count",
                            "major_amino", "major_count",
+                            "ref_major", "ref_count",
                            "mutation_amino", "mutation_count",
                            "n_aminos"]]
-mutation_df.to_csv(pileup_path.replace("pileup", ".%s.csv" % gene_dt["name"]), index=False)
+mutation_df.to_csv(pileup_path.replace("pileup", "%s.csv" % gene_dt["name"]), index=False)
       
 print("--------------------------------------------------------------------------------")
 print("Mutation search complete.")
