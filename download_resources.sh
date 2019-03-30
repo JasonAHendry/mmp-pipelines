@@ -40,7 +40,7 @@ curl "$pf_ref_url/$pf_ref_fn" > "$pf_dir/$pf_ref_fn"
 echo "  Done"
 
 # Hs.
-s_dir="$resource_dir/1000g"
+hs_dir="$resource_dir/1000g"
 if [ ! -d $hs_dir ]; then
   mkdir $hs_dir
 fi
