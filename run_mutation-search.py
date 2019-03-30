@@ -33,7 +33,7 @@ for opt, value in opts:
         # define input .bam file and ouput directory
         input_bam = value
         input_path = os.path.dirname(input_bam)
-        output_path = input_path.replace("data", "analysis")
+        output_path = input_path.replace("results", "analysis")
         if not os.path.isdir(output_path):
             os.mkdir(output_path)
             

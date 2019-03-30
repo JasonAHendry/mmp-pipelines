@@ -39,7 +39,7 @@ for opt, value in opts:
     elif opt in ("-t", "--target"):
         target_dir = value
     elif opt in ("-w", "--wait"):
-        mean_wait = float(value)
+        wait_time = float(value)
     else:
         print("Parameter %s not recognized." % opt)
         sys.exit(2)
@@ -50,8 +50,10 @@ pf_ref_path = "data/resources/plasmodb/39/PlasmoDB-39_Pfalciparum3D7_Genome.fast
 
 # Prepare folder structures
 fastq_dir = os.path.join(target_dir, "fastq")
-trimmed_dir = os.path.join(target_dir, "fastq_trimmed")
-
+results_dir = target_dir.replace("data", "results")
+trimmed_dir = os.path.join(results_dir, "fastq_trimmed")
+if not os.path.isdir(results_dir):
+    os.mkdir(results_dir)
 if not os.path.isdir(fastq_dir):
     os.mkdir(fastq_dir)
 if not os.path.isdir(trimmed_dir):
@@ -99,7 +101,7 @@ while True:
                     print("    Mapping Barcode ", j)
                     print("    Name:", barcode)
                     barcode_fastq = os.path.join(trimmed_output_dir, barcode)
-                    barcode_sam = os.path.join(target_dir, barcode.replace("fastq", "sam"))
+                    barcode_sam = os.path.join(results_dir, barcode.replace("fastq", "sam"))
                     cmd_map = "minimap2 -ax map-ont %s %s" % (pf_ref_path, barcode_fastq)
                     if os.path.isfile(barcode_sam):
                         #  if the sam file is already there

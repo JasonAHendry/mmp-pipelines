@@ -6,8 +6,8 @@
 
 # REFERENCE GENOME URLS
 # Pf
-pf_ref_url="http://plasmodb.org/common/downloads/Current_Release/Pfalciparum3D7/fasta/data/"
-pf_ref_fn="PlasmoDB-41_Pfalciparum3D7_Genome.fasta"
+pf_ref_url="https://plasmodb.org/common/downloads/release-39/Pfalciparum3D7/fasta/data/"
+pf_ref_fn="PlasmoDB-39_Pfalciparum3D7_Genome.fasta"
 
 # Hs
 hs_ref_url="ftp://ftp.1000genomes.ebi.ac.uk/vol1/ftp/technical/reference/GRCh38_reference_genome/"
