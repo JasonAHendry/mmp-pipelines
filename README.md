@@ -1,8 +1,10 @@
-# mmp-pipelines
-A collection of pipelines for nanopore data analysis, built by the MMP.
+![logo](logo.png) 
+
+# Mobile Malaria Project : ONT Analysis Pipelines
+A collection of pipelines for analyzing nanopore data, with a focus on amplicon sequencing of *P.falciparum* and *An. gambiae*.
 
 
-## How to run the pipeline
+## Run
 The current pipeline allows for real-time adapter trimming and read mapping. Prepare your ONT experiment and enable real-time basecalling. Once your sequencing run has begun, type:
 
 ```
@@ -30,7 +32,7 @@ python run_mutation-search.py --bam results/ont/uk/2019-01-01/BC01.sorted.bam \
 The above command will search the reads of `BC01.sorted.bam` for any of the mutations listed in `kelch13.ini` and deposit a table of result in `analysis/ont/uk/2019-01-01/BC01.reverse.KELCH13.search.csv`. Mutation scanning can be run in an analogous fashion.
 
 
-## How to set up the pipeline
+## Install
 Firstly, clone the repository to your local machine:
 ```
 git clone https://github.com/JasonAHendry/mmp-pipelines
