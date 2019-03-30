@@ -21,9 +21,10 @@ from lib.mutation import *
 # Parse user inputs
 try:
     opts, args = getopt.getopt(sys.argv[1:], ":b:i:f:d", ["bam=", "ini=", "min_freq=", "downsample"])
-	# -b or --bam : .sorted.bam file in which to search for mutations
-	# -i or --ini : .ini file which contains gene name, location, and a listed set of mutations
-	# -d or --downsample : boolean, do you want to downsample reads to accelerate analysis?
+    # -b or --bam : .sorted.bam file in which to search for mutations
+    # -i or --ini : .ini file which contains gene name, location, and a listed set of mutations
+    # -f or --min_freq : float giving minimum freq of non-synonymous mutation to store
+    # -d or --downsample : boolean, do you want to downsample reads to accelerate analysis?
 except getopt.GetoptError:
     print("Option Error.")
 
@@ -32,10 +33,7 @@ for opt, value in opts:
     if opt in ("-b", "--bam"):
         # define input .bam file and ouput directory
         input_bam = value
-        input_path = os.path.dirname(input_bam)
         output_path = input_bam.replace("results", "analysis")
-        if not os.path.isdir(output_path):
-            os.mkdir(output_path)
             
     elif opt in ("-i", "--ini"):
         gene_ini = value
