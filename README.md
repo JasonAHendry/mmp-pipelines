@@ -1,6 +1,6 @@
 ![logo](logo.png) 
 
-# Mobile Malaria Project : ONT Analysis Pipelines
+# ONT Analysis Pipelines
 A collection of pipelines for analyzing nanopore data, with a focus on amplicon sequencing of *P.falciparum* and *An. gambiae*.
 
 
