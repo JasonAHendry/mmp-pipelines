@@ -32,10 +32,7 @@ for opt, value in opts:
     if opt in ("-b", "--bam"):
         # define input .bam file and ouput directory
         input_bam = value
-        input_path = os.path.dirname(input_bam)
         output_path = input_bam.replace("results", "analysis")
-        if not os.path.isdir(output_path):
-            os.mkdir(output_path)
             
     elif opt in ("-i", "--ini"):
         gene_ini = value
