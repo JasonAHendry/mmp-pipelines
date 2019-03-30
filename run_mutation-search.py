@@ -33,7 +33,7 @@ for opt, value in opts:
         # define input .bam file and ouput directory
         input_bam = value
         input_path = os.path.dirname(input_bam)
-        output_path = input_path.replace("results", "analysis")
+        output_path = input_bam.replace("results", "analysis")
         if not os.path.isdir(output_path):
             os.mkdir(output_path)
             
@@ -116,7 +116,7 @@ else:
     pileup_bam = input_bam
       
 # Generate read pileup using samtools
-pileup_path = pileup_bam.replace("sorted.bam", "pileup")
+pileup_path = output_path.replace("sorted.bam", "pileup")
 position = gene_dt["chromosome"] + ":" + str(gene_dt["start"]) + "-" + str(gene_dt["end"])
 
 cmd = "samtools mpileup -f %s -r %s -Q 0 -aa -B %s > %s" % (gene_dt["genome"], 
@@ -267,7 +267,7 @@ mutation_df = mutation_df[["mutation", "detected",
                             "ref_major", "ref_count",
                            "mutation_amino", "mutation_count",
                            "n_aminos"]]
-mutation_df.to_csv(pileup_path.replace("pileup", "%s.csv" % gene_dt["name"]), index=False)
+mutation_df.to_csv(pileup_path.replace("pileup", "%s.search.csv" % gene_dt["name"]), index=False)
       
 print("--------------------------------------------------------------------------------")
 print("Mutation search complete.")
