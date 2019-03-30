@@ -1,4 +1,4 @@
-![logo](logo.png) 
+![logo](images/logo.png) 
 
 # ONT Analysis Pipelines
 A collection of pipelines for analyzing nanopore data, with a focus on amplicon sequencing of *P.falciparum* and *An. gambiae*.
