@@ -2,4 +2,5 @@
 *
 # Except this file
 !.gitignore
-!resources/pf-regions/crt1.ini
+!./resources/pf-regions/crt1.ini
+!./resources/pf-regions/dhfr.ini
