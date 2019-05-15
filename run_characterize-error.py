@@ -9,6 +9,7 @@
 
 import os
 import sys
+import subprocess
 import configparser
 import getopt
 import numpy as np
@@ -19,10 +20,10 @@ from lib.mutation import *
 
 # Parse user inputs
 try:
-    opts, args = getopt.getopt(sys.argv[1:], ":b:i:d", ["bam=", "ini=", "downsample"])
+    opts, args = getopt.getopt(sys.argv[1:], ":b:i:d:", ["bam=", "ini=", "downsample="])
 	# -b or --bam : .sorted.bam file in which to search for mutations
 	# -i or --ini : .ini file which contains gene name, location, and a listed set of mutations
-	# -d or --downsample : boolean, do you want to downsample reads to accelerate analysis?
+	# -d or --downsample : int, if set, downsample to specified number of reads to accelerate analysis?
 except getopt.GetoptError:
     print("Option Error.")
     
@@ -32,6 +33,7 @@ for opt, value in opts:
         # define input .bam file and ouput directory
         input_bam = value
         output_path = input_bam.replace("results", "analysis")
+        output_dir = os.path.dirname(output_path)
             
     elif opt in ("-i", "--ini"):
         gene_ini = value
@@ -52,8 +54,14 @@ for opt, value in opts:
         
     elif opt in ("-d", "--downsample"):
         # mostly for testing purposes
-        downsample = True
+        downsample = True  
+        n_reads = int(value)
+        output_dir += "/downsampling"  # re-direct output
+        output_path = os.path.join(output_dir, os.path.basename(input_bam))
+        if not os.path.isdir(output_dir):
+            os.mkdir(output_dir)
         
+         
     else:
         print("Parameter %s not recognized." % opt)
         sys.exit(2)
@@ -102,18 +110,24 @@ print("Output path:", output_path)
 print("Reference genome:", gene_dt["genome"])
 print("")
 print("Downsampling?", downsample)
+if downsample:
+    print("..to %d reads." % n_reads)
 print("====================================================================================================")
 
 
 # Downsample if flagged
 if downsample:
     print("Downsampling from SAM file...")
-    n_reads = 1000
+
+    # Counting total reads can be slow...
+    # total_reads = int(subprocess.check_output("samtools view -c %s" % input_bam, shell=True))
+    # print(" Total Reads:", total_reads)
+    # print(" Downsampling to: %d (%.02f%%)" % (n_reads, 100*n_reads/total_reads))
 
     # You have to downsample from the `.sam` file
-    input_sam = input_bam.replace("sorted.bam", "sam")
-    dwn_sam = os.path.join(output_path, os.path.basename(input_sam))
-    dwn_bam = dwn_sam.replace("sam", "bam")
+    input_sam = input_bam.replace("sorted.bam", "sam")  # start from `.sam`
+    dwn_sam = output_path.replace("sorted.bam", "sam")
+    dwn_bam = dwn_sam[:-3] + "bam"
     dwn_sorted_bam = dwn_bam.replace("bam", "sorted.bam")
 
     # Downsample by shuffling lines, first extract header
@@ -140,8 +154,8 @@ else:
     pileup_bam = input_bam
     
 
-# Generate read pileup using samtools
-pileup_path = output_path.replace("sorted.bam", "pileup")
+# Generate read pileup for a specific gene using samtools
+pileup_path = output_path.replace("sorted.bam", "%s.pileup" % gene_dt["name"])  # I want to add the gene name here
 
 cmd = "samtools mpileup -f %s -l %s -Q 0 -aa -B %s > %s" % (gene_dt["genome"], 
                                                             exon_bed,  # Includes exon boundaries
@@ -222,18 +236,31 @@ with open(pileup_path, "r") as fn:
         mutation_dt["SNV"].append(snv)
         mutation_dt["error"].append(error)
 
-# Clean and write
+# Clean
 info_cols = ["position", "ref", "total"]
 num_cols = ["A", "T", "C", "G",
             "-", "SNV", "error"]
-
 mutation_counts = pd.DataFrame(mutation_dt)
 info_df = mutation_counts[info_cols]
 num_df = mutation_counts[num_cols].div(mutation_counts["total"], 0)
 mutation_freqs = pd.concat([info_df, num_df], 1)
 
-mutation_counts.to_csv(pileup_path.replace("pileup", "%s.error_count.csv" % gene_dt["name"]), index=False)
-mutation_freqs.to_csv(pileup_path.replace("pileup", "%s.error_freqs.csv" % gene_dt["name"]), index=False)
+
+# Write output
+if downsample:
+    # If downsampling has occured, we need to include `n_reads` and replicate in filename
+    # format: CRT1.reverse.01000_reads.01.csv.
+    path = pileup_path.replace("pileup", "%.06d_reads.error_count.csv" % n_reads)
+    fn = os.path.basename(path)
+    n = sum([fn[:-4] in f for f in os.listdir(output_dir)])
+    mutation_counts_path = path.replace("csv", "%.02d.csv" % n)
+    mutation_freqs_path = mutation_counts_path.replace("_count", "_freqs")
+else:
+    mutation_counts_path = pileup_path.replace("pileup", "error_counts.csv")
+    mutation_freqs_path = pileup_path.replace("pileup", "error_freqs.csv")
+    
+mutation_counts.to_csv(mutation_counts_path, index=False)
+mutation_freqs.to_csv(mutation_freqs_path, index=False)
 
 print("----------------------------------------------------------------------------------------------------")
 print("Error analysis complete.")
