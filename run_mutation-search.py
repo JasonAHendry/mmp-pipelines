@@ -256,8 +256,10 @@ for mutation in mutations:
         total_codon_count = sum(codon_frequencies.values())
         ref_codon_count = codon_frequencies[codon_ref]
         major_codon, major_codon_count = codon_frequencies.most_common(1)[0]
-        indel_codon_count = sum([count for c, count in codon_frequencies.items() if "-" in c])
-        snv_codon_count = sum([count for c, count in codon_frequencies.items() if not "-" in c and c != codon_ref])
+        indel_codon_count = sum([count for c, count in codon_frequencies.items() 
+                                 if "-" in c or "+" in c])
+        snv_codon_count = sum([count for c, count in codon_frequencies.items() 
+                               if not "-" in c and not "+" in c and c != codon_ref])
         
         print("Discovered...")
         print("  Reference codon (from 3D7):", codon_ref)

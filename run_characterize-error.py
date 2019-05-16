@@ -222,7 +222,8 @@ with open(pileup_path, "r") as fn:
         nt_frequencies = Counter(processed_pileup)
         total = sum([count for nt, count in nt_frequencies.items()])
         error = sum([count for nt, count in nt_frequencies.items() if nt != ref])
-        snv = sum([count for nt, count in nt_frequencies.items() if nt != ref and nt != "-"])
+        snv = sum([count for nt, count in nt_frequencies.items() 
+                   if nt != ref and not nt in ["+", "-"]])
 
         # Store
         mutation_dt["position"].append(i)
@@ -232,14 +233,14 @@ with open(pileup_path, "r") as fn:
         mutation_dt["T"].append(nt_frequencies["T"])
         mutation_dt["C"].append(nt_frequencies["C"])
         mutation_dt["G"].append(nt_frequencies["G"])
+        mutation_dt["+"].append(nt_frequencies["+"])
         mutation_dt["-"].append(nt_frequencies["-"])
         mutation_dt["SNV"].append(snv)
         mutation_dt["error"].append(error)
 
 # Clean
 info_cols = ["position", "ref", "total"]
-num_cols = ["A", "T", "C", "G",
-            "-", "SNV", "error"]
+num_cols = ["A", "T", "C", "G", "+", "-", "SNV", "error"]
 mutation_counts = pd.DataFrame(mutation_dt)
 info_df = mutation_counts[info_cols]
 num_df = mutation_counts[num_cols].div(mutation_counts["total"], 0)

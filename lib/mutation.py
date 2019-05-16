@@ -1,6 +1,9 @@
 # MMPP: Mobile Malaria Project Pipelines
 # ----------------------------------------
-# Functions used with `run_mutation_search.py`
+# Functions used with:
+# - `run_mutation-search.py`
+# - `run_mutation-scan.py`
+# - `run_characterize-error.py`
 # ----------------------------------------
 # JHendry, 2019/03/27
 
@@ -58,9 +61,10 @@ def process_pileup(pileup, ref):
     # indels are initiated with [+-][0-9]+[ATCGatcg]
     for indel_size in set(re.findall("\d+", pileup)):
         indel_size = int(indel_size)
-        pileup = re.sub(r"[+-]%d[ATCGatcg]{%d}" % (indel_size, indel_size), "-", pileup)
+        pileup = re.sub(r"[+]%d[ATCGatcg]{%d}" % (indel_size, indel_size), "+", pileup)  # insertions
+        pileup = re.sub(r"[-]%d[ATCGatcg]{%d}" % (indel_size, indel_size), "-", pileup)  # deletions
    
-    pileup = re.sub("\*", "-", pileup)  
+    pileup = re.sub("\*", "-", pileup)  # deletions cover multiple positions
     pileup = re.sub("\$|\^.", "", pileup)
     pileup = re.sub("\.|,", ref, pileup)
     pileup = pileup.upper()
