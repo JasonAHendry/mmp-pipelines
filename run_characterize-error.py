@@ -16,6 +16,7 @@ import numpy as np
 import pandas as pd
 from collections import Counter
 from lib.mutation import *
+from lib.error import *
 
 
 # Parse user inputs
@@ -194,7 +195,7 @@ else:
     assert stop_codon in ["ATT", "ATC", "ACT"]
   
     
-# Prepare storage 
+# ANALYZE ERROR ON PER-NUCLEOTIDE BASIS
 mutation_dt = {
     "position": [],
     "ref": [],
@@ -204,24 +205,33 @@ mutation_dt = {
     "C": [],
     "G": [],
     "-": [],
+    "+": [],
     "SNV": [],
     "error": []
 }
 
+indel_dt = {
+    "position": [],
+    "ref": [],
+    "length": []
+}
 
-# Processes pileup across all nucleotides
+# PILEUP ACROSS ALL NUCLEOTIDES
 with open(pileup_path, "r") as fn:
     for i, line in enumerate(fn):
+        
+        # PREPARE PILEUP
         chrom, pos, ref, coverage, pileup, _ = line.split("\t")
         processed_pileup = process_pileup(pileup, ref)
         if gene_dt["strand"] == '-':
             ref = complement_map[ref]
             processed_pileup = "".join([complement_map[base] for base in processed_pileup])
             
-        # Get frequencies, including indels
+        # GET MUTATION FREQUENCIES IN PILEUP
         nt_frequencies = Counter(processed_pileup)
         total = sum([count for nt, count in nt_frequencies.items()])
-        error = sum([count for nt, count in nt_frequencies.items() if nt != ref])
+        error = sum([count for nt, count in nt_frequencies.items() 
+                     if nt != ref])
         snv = sum([count for nt, count in nt_frequencies.items() 
                    if nt != ref and not nt in ["+", "-"]])
 
@@ -233,36 +243,108 @@ with open(pileup_path, "r") as fn:
         mutation_dt["T"].append(nt_frequencies["T"])
         mutation_dt["C"].append(nt_frequencies["C"])
         mutation_dt["G"].append(nt_frequencies["G"])
-        mutation_dt["+"].append(nt_frequencies["+"])
         mutation_dt["-"].append(nt_frequencies["-"])
+        mutation_dt["+"].append(nt_frequencies["+"])
         mutation_dt["SNV"].append(snv)
         mutation_dt["error"].append(error)
+        
+        # GET INDEL LENGTH DISTRIBUTION
+        indels = get_indels(pileup)
+        n_indels = len(indels)
 
-# Clean
-info_cols = ["position", "ref", "total"]
-num_cols = ["A", "T", "C", "G", "+", "-", "SNV", "error"]
-mutation_counts = pd.DataFrame(mutation_dt)
-info_df = mutation_counts[info_cols]
-num_df = mutation_counts[num_cols].div(mutation_counts["total"], 0)
-mutation_freqs = pd.concat([info_df, num_df], 1)
+        # Store
+        indel_dt["position"].extend([i]*n_indels)
+        indel_dt["ref"].extend([ref]*n_indels)
+        indel_dt["length"].extend(indels)
+        
 
+# ANALYZE ERROR ON PER-AMINO ACID BASIS
+amino_acids = set(genetic_code.values())
+amino_dt = {
+    "position": [],
+    "ref": [],
+    "total": []
+}
+amino_dt.update({a: [] for a in amino_acids})
 
-# Write output
-if downsample:
-    # If downsampling has occured, we need to include `n_reads` and replicate in filename
-    # format: CRT1.reverse.01000_reads.01.csv.
-    path = pileup_path.replace("pileup", "%.06d_reads.error_count.csv" % n_reads)
-    fn = os.path.basename(path)
-    n = sum([fn[:-4] in f for f in os.listdir(output_dir)])
-    mutation_counts_path = path.replace("csv", "%.02d.csv" % n)
-    mutation_freqs_path = mutation_counts_path.replace("_count", "_freqs")
-else:
-    mutation_counts_path = pileup_path.replace("pileup", "error_counts.csv")
-    mutation_freqs_path = pileup_path.replace("pileup", "error_freqs.csv")
+# PILEUP ACROSS ALL CODONS
+with open(pileup_path, "r") as fn:
     
-mutation_counts.to_csv(mutation_counts_path, index=False)
-mutation_freqs.to_csv(mutation_freqs_path, index=False)
+    # want to loop until you have a full codon
+    nts = 0
+    codon_position = 0
+    codon_ref_nts = []
+    codon_pileup = []
+    for i, line in enumerate(fn):
+        nts += 1
+        chrom, pos, ref, coverage, pileup, _ = line.split("\t")
+        processed_pileup = process_pileup(pileup, ref)
+        if gene_dt["strand"] == 'reverse':
+            ref = complement_map[ref]
+            processed_pileup = "".join([complement_map[base] for base in processed_pileup])
+        codon_ref_nts.append(ref)
+        codon_pileup.append(processed_pileup)
 
+        if nts == 3:
+            codon_position += 1
+            # Search the codon for non-synonymous mutations above a specified frequency
+            assert len(codon_ref_nts) == 3
+            assert len(codon_pileup) == 3
+            
+            # Pre-process from lists into strings
+            codon_ref = "".join(codon_ref_nts)
+            amino_ref = codon_to_amino(codon_ref, genetic_code)
+            codon_pileup = ["".join(c) for c in zip(*codon_pileup)]
+            
+            # Get frequencies of codons (i.e. nucleotide level)
+            codon_frequencies = Counter(codon_pileup)
+        
+            amino_ref = codon_to_amino(codon_ref, genetic_code)
+            amino_frequencies = Counter([codon_to_amino(c, genetic_code) for c in codon_pileup])
+            # next line removes indels which have prevented making amino acid calls
+            amino_frequencies = Counter(dict([(k, v) for k, v in amino_frequencies.items() 
+                                              if k != None]))
+
+            # Store
+            amino_dt["position"].append(codon_position)
+            amino_dt["ref"].append(amino_ref)
+            for aa in amino_acids:
+                amino_dt[aa].append(amino_frequencies[aa])
+            amino_dt["total"].append(sum(amino_frequencies.values()))
+            
+            nts = 0
+            codon_ref_nts = []
+            codon_pileup = []
+
+            
+# WRITE OUTPUT            
+mutation_df = pd.DataFrame(mutation_dt)
+indel_df = pd.DataFrame(indel_dt)
+amino_df = pd.DataFrame(amino_dt)
+
+output_labels = {
+    "nt_error": mutation_df,
+    "aa_error": amino_df,
+    "indel_counts": indel_df
+}
+
+if downsample:
+    # e.g. DHFR.001000_reads.nt_error.02.csv
+    write_path_template = pileup_path.replace("pileup", "%.06d_reads.%s.csv")
+    for label, df in output_labels.items():
+        path = write_path_template % (n_reads, label)
+        fn = os.path.basename(path)
+        n = sum([fn[:-4] in f for f in os.listdir(output_dir)])
+        output_path = path.replace("csv", "%.02d.csv" % n)
+        df.to_csv(output_path, index=False)
+else:
+    # e.g. DHFR.nt_error.csv
+    write_path_template =  pileup_path.replace("pileup", "%s.csv")
+    for label, df in output_labels.items():
+        output_path = write_path_template % label
+        df.to_csv(output_path, index=False)
+
+        
 print("----------------------------------------------------------------------------------------------------")
 print("Error analysis complete.")
 print("====================================================================================================")

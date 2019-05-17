@@ -84,7 +84,7 @@ def codon_to_amino(codon, genetic_code):
             to their corresponding amino acids.
     returns
         amino: str
-            Amino acid correspondign to input
+            Amino acid corresponding to input
             `codon`.
     
     """

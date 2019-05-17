@@ -5,6 +5,8 @@
 # ----------------------------------------
 # JHendry, 2019/05/17
 
+import re
+import pandas as pd
 
 def get_indels(pileup):
     """
@@ -27,6 +29,41 @@ def get_indels(pileup):
     inserts = [int(i) for i in re.findall(r"[+]\d+", pileup)]
     deletes = [int(d) for d in re.findall(r"[-]\d+", pileup)]
     return inserts + deletes
+
+
+def convert_to_frequencies(df, total, exclude):
+    """
+    Convert a dataframe `df` containing counts
+    which sum to `total` into their frequencies
+    i.e. divide columns by `total`
+    
+    params
+        df: DataFrame
+            Each row is nucleotide position.
+            Columns of the contain counts 
+            for different amino acids or
+            nucleotides; they sum to total.
+        total: str
+            Column name which contains
+            the total count for each row.
+        exclude: list, str
+            List of column names which should
+            NOT be normalized, e.g.
+            ['ref', 'position'] &c.
+    returns
+        df_norm: DataFrame
+            Data fame with the same shape as
+            `df`, but where all columns except
+            for `exclude` have been divided by
+            `total`.
+    
+    """
+    
+    cols = df.columns
+    cols_to_normalize = [c for c in cols if c not in exclude]
+    df_norm = df[cols_to_normalize].div(df[total], 0)
+    df_norm = pd.concat([df[exclude], df_norm], 1)
+    return df_norm
 
 
 def annotate_homopolymers(seq):
