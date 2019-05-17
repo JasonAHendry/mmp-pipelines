@@ -7,6 +7,7 @@
 
 import re
 import pandas as pd
+import numpy as np
 
 def get_indels(pileup):
     """
