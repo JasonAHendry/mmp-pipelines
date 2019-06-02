@@ -170,7 +170,7 @@ def calc_distance_matrix(gene_informative, ignore_indels=True, metric='jaccard')
         print("... consider downsampling")
     
     if ignore_indels:
-        f = np.copy(gene_informative)
+        f = np.copy(gene_informative).astype("float")
         f[f == -1] = np.nan
     else:
         f = gene_informative
