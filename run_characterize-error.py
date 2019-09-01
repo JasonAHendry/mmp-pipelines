@@ -95,7 +95,7 @@ gene_dt["strand"] = exon_df.strand.iloc[0]
 
 # Let us begin...
 print("====================================================================================================")
-print("MMP Mutation Search Pipeline")
+print("MMP Error characterization pipeline")
 print("----------------------------------------------------------------------------------------------------")
 print("Gene:", gene_dt["name"])
 print("Chromosome:", gene_dt["chromosome"])
@@ -217,6 +217,7 @@ indel_dt = {
 }
 
 # PILEUP ACROSS ALL NUCLEOTIDES
+print("Computing nucleotide-level error across all sites...")
 with open(pileup_path, "r") as fn:
     for i, line in enumerate(fn):
         
@@ -256,7 +257,8 @@ with open(pileup_path, "r") as fn:
         indel_dt["position"].extend([i]*n_indels)
         indel_dt["ref"].extend([ref]*n_indels)
         indel_dt["length"].extend(indels)
-        
+print("Done.")        
+
 
 # ANALYZE ERROR ON PER-AMINO ACID BASIS
 amino_acids = set(genetic_code.values())
@@ -268,6 +270,7 @@ amino_dt = {
 amino_dt.update({a: [] for a in amino_acids})
 
 # PILEUP ACROSS ALL CODONS
+print("Computing amino acid-level error across all sites.")
 with open(pileup_path, "r") as fn:
     
     # want to loop until you have a full codon
@@ -315,9 +318,10 @@ with open(pileup_path, "r") as fn:
             nts = 0
             codon_ref_nts = []
             codon_pileup = []
-
+print("Done.")
             
-# WRITE OUTPUT            
+# WRITE OUTPUT
+print("Writing output...")
 mutation_df = pd.DataFrame(mutation_dt)
 indel_df = pd.DataFrame(indel_dt)
 amino_df = pd.DataFrame(amino_dt)
@@ -337,13 +341,15 @@ if downsample:
         n = sum([fn[:-4] in f for f in os.listdir(output_dir)])
         output_path = path.replace("csv", "%.02d.csv" % n)
         df.to_csv(output_path, index=False)
+        print("  %s: %s" % (label, output_path))
 else:
     # e.g. DHFR.nt_error.csv
     write_path_template =  pileup_path.replace("pileup", "%s.csv")
     for label, df in output_labels.items():
         output_path = write_path_template % label
         df.to_csv(output_path, index=False)
-
+        print("  %s: %s" % (label, output_path))
+print("Done.")
         
 print("----------------------------------------------------------------------------------------------------")
 print("Error analysis complete.")
