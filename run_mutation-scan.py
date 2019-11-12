@@ -37,20 +37,19 @@ for opt, value in opts:
             
     elif opt in ("-i", "--ini"):
         gene_ini = value
+        gene_ini_path = os.path.dirname(gene_ini)
         config = configparser.ConfigParser()
         config.read(gene_ini)
         
         # hold gene location information
         gene_dt = {}
-        gene_dt["name"] = config.get("Location", "name")
-        gene_dt["genome"] = config.get("Location", "genome")
-        gene_dt["chromosome"] = config.get("Location", "chromosome")
-        gene_dt["start"] = config.getint("Location", "start")
-        gene_dt["end"] = config.getint("Location", "end")
-        gene_dt["strand"] = config.get("Location", "strand")
+        gene_dt["name"] = config.get("Parameters", "name")
+        gene_dt["id"] = config.get("Parameters", "id")
+        gene_dt["genome"] = config.get("Parameters", "genome")
+        gene_dt["gff"] = config.get("Parameters", "gff")
         
         # hold mutation information
-        mutations = config.get("Mutations", "listed").split(", ")
+        mutations = config.get("Parameters", "mutations").split(", ")
         n_mutations = len(mutations)
         
     elif opt in ("-f", "--min_freq"):
@@ -63,6 +62,30 @@ for opt, value in opts:
     else:
         print("Parameter %s not recognized." % opt)
         sys.exit(2)
+        
+# Create a GFF describing the exons of the target gene
+exon_gff = "%s.exons.gff" % os.path.join(gene_ini_path, gene_dt["name"])
+cmd = "grep -E 'exon.*%s' %s > %s" % (gene_dt["id"],
+                                      gene_dt["gff"],
+                                      exon_gff)
+os.system(cmd)
+gff_columns = ["seq", "source", "feature", "start", "end", "score", "strand", "phase", "attributes"]
+exon_df = pd.read_csv(exon_gff, sep="\t", header=-1)
+exon_df.columns = gff_columns
+exon_df.start = exon_df.start - 1  # Off by one incongruity with mpileup, unfortunately.
+exon_df.to_csv(exon_gff, sep="\t", index=False, header=False)
+
+
+# Create an associated BED file
+exon_bed = "%s.exons.bed" % os.path.join(gene_ini_path, gene_dt["name"])
+cmd = "cut -f 1,4,5 %s > %s" % (exon_gff, exon_bed)
+os.system(cmd)
+
+gene_dt["chromosome"] = exon_df.seq[0]
+gene_dt["start"] = exon_df.start.iloc[0]
+gene_dt["end"] = exon_df.end.iloc[-1]
+gene_dt["n_exons"] = len(exon_df)
+gene_dt["strand"] = exon_df.strand.iloc[0]
 
 print("================================================================================")
 print("MMP Mutation Scan Pipeline")
